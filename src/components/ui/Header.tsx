@@ -33,24 +33,22 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="relative w-full overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 -z-10" />
-      
-      <div className="max-w-6xl mx-auto px-4 py-16 sm:py-24 text-center">
+    <header className="absolute inset-0 w-full h-full flex items-center justify-center z-10">
+      <div className="max-w-6xl mx-auto px-4 text-center">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="text-4xl sm:text-6xl font-bold mb-4">
+          <h1 className="text-4xl sm:text-6xl font-bold mb-4 text-white">
             我们的<span className="text-primary">100</span>天
           </h1>
           
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
+          <p className="text-xl mb-8 max-w-2xl mx-auto text-white/90">
             记录我们在一起的每一个美好瞬间，珍藏每一份感动与回忆
           </p>
           
-          <div className="flex items-center justify-center gap-2 mb-8">
+          <div className="flex items-center justify-center gap-2 mb-8 text-white">
             <FaHeart className="text-primary text-2xl animate-pulse" />
             <span className="text-xl">我们已经在一起</span>
             <FaHeart className="text-primary text-2xl animate-pulse" />
@@ -59,19 +57,19 @@ export default function Header() {
           <div className="grid grid-cols-4 gap-4 max-w-xl mx-auto">
             <div className="bg-background/80 backdrop-blur-sm p-4 rounded-lg shadow-lg">
               <div className="text-3xl sm:text-4xl font-bold text-primary">{days}</div>
-              <div className="text-sm">天</div>
+              <div className="text-sm text-white">天</div>
             </div>
             <div className="bg-background/80 backdrop-blur-sm p-4 rounded-lg shadow-lg">
               <div className="text-3xl sm:text-4xl font-bold text-primary">{hours}</div>
-              <div className="text-sm">小时</div>
+              <div className="text-sm text-white">小时</div>
             </div>
             <div className="bg-background/80 backdrop-blur-sm p-4 rounded-lg shadow-lg">
               <div className="text-3xl sm:text-4xl font-bold text-primary">{minutes}</div>
-              <div className="text-sm">分钟</div>
+              <div className="text-sm text-white">分钟</div>
             </div>
             <div className="bg-background/80 backdrop-blur-sm p-4 rounded-lg shadow-lg">
               <div className="text-3xl sm:text-4xl font-bold text-primary">{seconds}</div>
-              <div className="text-sm">秒</div>
+              <div className="text-sm text-white">秒</div>
             </div>
           </div>
         </motion.div>

@@ -14,8 +14,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // 检查URL是否是上传目录中的图片
-    if (!imageUrl.startsWith('/uploads/')) {
+    // 检查URL是否是上传目录或背景目录中的图片
+    if (!imageUrl.startsWith('/uploads/') && !imageUrl.startsWith('/backgrounds/')) {
       return NextResponse.json(
         { success: false, message: '无效的图片URL' },
         { status: 400 }

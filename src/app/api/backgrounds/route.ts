@@ -18,13 +18,9 @@ const readBackgrounds = (): string[] => {
   try {
     ensureDirectoryExists();
     if (!fs.existsSync(configFilePath)) {
-      const defaultBackgrounds = [
-        '/backgrounds/bg1.jpg',
-        '/backgrounds/bg2.jpg',
-        '/backgrounds/bg3.jpg',
-      ];
-      fs.writeFileSync(configFilePath, JSON.stringify(defaultBackgrounds), 'utf8');
-      return defaultBackgrounds;
+      // 不使用默认背景，使用空数组
+      fs.writeFileSync(configFilePath, JSON.stringify([]), 'utf8');
+      return [];
     }
     const data = fs.readFileSync(configFilePath, 'utf8');
     return JSON.parse(data);
@@ -49,7 +45,7 @@ const saveBackgrounds = (backgrounds: string[]): boolean => {
 // 获取背景图片列表
 export async function GET() {
   const backgrounds = readBackgrounds();
-  return NextResponse.json(backgrounds);
+  return NextResponse.json({ backgrounds });
 }
 
 // 更新背景图片列表

@@ -12,7 +12,11 @@ import { TimelineEvent } from '@/app/api/timeline/route';
 // 正确的密码
 const CORRECT_PASSWORD = '241214';
 
-export default function Timeline() {
+interface TimelineProps {
+  onModalChange?: (isOpen: boolean) => void;
+}
+
+export default function Timeline({ onModalChange }: TimelineProps) {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -23,13 +27,24 @@ export default function Timeline() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
+  // 通知父组件弹窗状态变化
+  useEffect(() => {
+    if (onModalChange) {
+      onModalChange(isFormOpen || isPasswordModalOpen || isDeleteConfirmOpen);
+    }
+  }, [isFormOpen, isPasswordModalOpen, isDeleteConfirmOpen, onModalChange]);
+
   // 从服务器加载数据
   useEffect(() => {
     async function loadEvents() {
       try {
         setIsLoading(true);
         const loadedEvents = await getTimelineEvents();
-        setEvents(loadedEvents);
+        // 按日期排序（从新到旧）
+        const sortedEvents = [...loadedEvents].sort((a, b) => {
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        });
+        setEvents(sortedEvents);
       } catch (error) {
         console.error('加载事件失败:', error);
       } finally {
@@ -107,7 +122,10 @@ export default function Timeline() {
       ...event,
       id: Date.now().toString(),
     };
-    const updatedEvents = [...events, newEvent];
+    // 添加新事件并按日期重新排序
+    const updatedEvents = [...events, newEvent].sort((a, b) => {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
     setEvents(updatedEvents);
     setIsFormOpen(false);
     
@@ -117,9 +135,12 @@ export default function Timeline() {
 
   // 更新事件
   const updateEvent = async (updatedEvent: TimelineEvent) => {
+    // 更新事件并按日期重新排序
     const updatedEvents = events.map(event => 
       event.id === updatedEvent.id ? updatedEvent : event
-    );
+    ).sort((a, b) => {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
     setEvents(updatedEvents);
     setIsFormOpen(false);
     setEditingEvent(null);
@@ -135,15 +156,30 @@ export default function Timeline() {
     try {
       // 删除关联的图片文件
       if (deletingEvent.images && deletingEvent.images.length > 0) {
+        console.log('正在删除关联图片:', deletingEvent.images);
+        
         for (const imageUrl of deletingEvent.images) {
-          if (imageUrl.startsWith('/uploads/')) {
-            await fetch('/api/upload/delete', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ imageUrl }),
-            });
+          // 检查图片是否是上传的图片（包括backgrounds和uploads目录）
+          if (imageUrl.startsWith('/uploads/') || imageUrl.startsWith('/backgrounds/')) {
+            console.log('删除图片:', imageUrl);
+            
+            try {
+              const response = await fetch('/api/upload/delete', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ imageUrl }),
+              });
+              
+              if (response.ok) {
+                console.log('图片删除成功:', imageUrl);
+              } else {
+                console.error('图片删除失败:', imageUrl, await response.text());
+              }
+            } catch (err) {
+              console.error('删除图片出错:', imageUrl, err);
+            }
           }
         }
       }
@@ -156,6 +192,8 @@ export default function Timeline() {
       
       // 保存到服务器
       await saveEvents(updatedEvents);
+      
+      alert('回忆及相关图片已成功删除');
     } catch (error) {
       console.error('删除事件失败:', error);
       alert('删除事件失败，请重试');
@@ -234,22 +272,31 @@ export default function Timeline() {
       {/* 密码验证弹窗 */}
       <AnimatePresence>
         {isPasswordModalOpen && (
-          <PasswordModal 
-            onVerify={handlePasswordVerify} 
-            onCancel={() => setIsPasswordModalOpen(false)}
-            action={currentAction}
-          />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999] p-4 overflow-hidden"
+            style={{ touchAction: 'none' }}
+          >
+            <PasswordModal
+              onVerify={handlePasswordVerify}
+              onCancel={() => setIsPasswordModalOpen(false)}
+              action={currentAction}
+            />
+          </motion.div>
         )}
       </AnimatePresence>
 
       {/* 删除确认弹窗 */}
       <AnimatePresence>
-        {isDeleteConfirmOpen && deletingEvent && (
+        {isDeleteConfirmOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999] p-4 overflow-hidden"
+            style={{ touchAction: 'none' }}
           >
             <motion.div
               initial={{ y: 20 }}
@@ -258,7 +305,7 @@ export default function Timeline() {
             >
               <h3 className="text-xl font-bold mb-4 text-red-500">确认删除</h3>
               <p className="mb-6">
-                您确定要删除 <span className="font-bold">{deletingEvent.title}</span> 这条回忆吗？此操作无法撤销。
+                您确定要删除 <span className="font-bold">{deletingEvent?.title}</span> 这条回忆吗？此操作无法撤销。
               </p>
               <div className="flex justify-end gap-2">
                 <button
@@ -283,10 +330,11 @@ export default function Timeline() {
       <AnimatePresence>
         {isFormOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999] p-4 overflow-hidden"
+            style={{ touchAction: 'none' }}
           >
             <motion.div
               initial={{ y: 20 }}
@@ -307,4 +355,4 @@ export default function Timeline() {
       </AnimatePresence>
     </div>
   );
-} 
+}

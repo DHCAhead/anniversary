@@ -3,13 +3,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaGift, FaTimes, FaEdit, FaCheck, FaLock } from 'react-icons/fa';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 
 // 正确的密码
 const CORRECT_PASSWORD = '241214';
 
-export default function Gift() {
+interface GiftProps {
+  onModalChange?: (isOpen: boolean) => void;
+}
+
+export default function Gift({ onModalChange }: GiftProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [giftContent, setGiftContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -20,6 +22,13 @@ export default function Gift() {
   const [password, setPassword] = useState('');
   const giftRef = useRef<HTMLDivElement>(null);
   const passwordRef = useRef<HTMLDivElement>(null);
+
+  // 通知父组件弹窗状态变化
+  useEffect(() => {
+    if (onModalChange) {
+      onModalChange(isOpen || isPasswordModalOpen);
+    }
+  }, [isOpen, isPasswordModalOpen, onModalChange]);
 
   // 获取礼物内容
   useEffect(() => {
@@ -127,7 +136,7 @@ export default function Gift() {
   };
 
   return (
-    <div className="absolute bottom-4 right-4 z-[100]">
+    <div className="z-[20]">
       <button
         onClick={() => setIsOpen(true)}
         className="bg-primary hover:bg-primary/80 text-white p-3 rounded-full shadow-lg transition-colors"
@@ -142,7 +151,8 @@ export default function Gift() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999] p-4 overflow-hidden"
+            style={{ touchAction: 'none' }}
           >
             <motion.div
               ref={giftRef}
@@ -207,28 +217,13 @@ export default function Gift() {
                 <textarea
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
-                  className="w-full h-[60vh] p-4 border border-gray-300 rounded-md font-mono text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full h-[60vh] p-4 border border-gray-300 rounded-md font-mono text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary overflow-y-auto"
                   placeholder="在这里编辑礼物内容，支持Markdown格式..."
                 />
               ) : (
-                <div className="prose prose-sm sm:prose max-w-none text-black font-serif">
-                  <ReactMarkdown 
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      h1: (props) => <h1 className="text-2xl font-bold mb-4 text-black" {...props} />,
-                      h2: (props) => <h2 className="text-xl font-bold mb-3 text-black" {...props} />,
-                      h3: (props) => <h3 className="text-lg font-bold mb-2 text-black" {...props} />,
-                      p: (props) => <p className="mb-4 text-black" {...props} />,
-                      ul: (props) => <ul className="list-disc pl-5 mb-4 text-black" {...props} />,
-                      ol: (props) => <ol className="list-decimal pl-5 mb-4 text-black" {...props} />,
-                      li: (props) => <li className="mb-1 text-black" {...props} />,
-                      a: (props) => <a className="text-blue-500 hover:underline" {...props} />,
-                      blockquote: (props) => <blockquote className="border-l-4 border-gray-300 pl-4 italic my-4 text-black" {...props} />
-                    }}
-                  >
-                    {giftContent || `# 小惊喜 🎁\n\n亲爱的，这是我为你准备的特别惊喜！\n\n## 惊喜清单\n\n1. **一份特别的礼物** - 等你来发现\n2. **一段美好的回忆** - 我们一起创造\n3. **一个温暖的拥抱** - 随时为你准备\n\n> 爱是最好的礼物，而你是我最珍贵的礼物。\n\n期待与你一起度过更多美好时光！❤️`}
-                  </ReactMarkdown>
-                </div>
+                <pre className="prose prose-sm sm:prose max-w-none text-black font-serif overflow-y-auto whitespace-pre-wrap">
+                  {giftContent || `# 小惊喜 🎁\n\n亲爱的，这是我为你准备的特别惊喜！\n\n## 惊喜清单\n\n1. **一份特别的礼物** - 等你来发现\n2. **一段美好的回忆** - 我们一起创造\n3. **一个温暖的拥抱** - 随时为你准备\n\n> 爱是最好的礼物，而你是我最珍贵的礼物。\n\n期待与你一起度过更多美好时光！❤️`}
+                </pre>
               )}
             </motion.div>
           </motion.div>
@@ -242,7 +237,8 @@ export default function Gift() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999] p-4 overflow-hidden"
+            style={{ touchAction: 'none' }}
           >
             <motion.div
               ref={passwordRef}
@@ -258,7 +254,7 @@ export default function Gift() {
                 请输入密码
               </h3>
               <p className="text-gray-600 dark:text-gray-300 text-center mb-4">
-                编辑礼物需要验证密码
+                编辑礼物内容需要验证密码
               </p>
               <input
                 type="password"

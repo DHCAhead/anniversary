@@ -43,119 +43,46 @@ export default function TimelineItem({ event, onEditClick, onDeleteClick }: Time
     }
   };
 
-  // 根据图片数量确定布局
+  // 统一图片布局为网格
   const getImageLayout = () => {
     if (!event.images || event.images.length === 0) return null;
 
-    if (event.images.length === 1) {
-      return (
-        <div 
-          className="w-full h-48 sm:h-64 relative rounded-lg overflow-hidden cursor-pointer"
-          onClick={() => openLightbox(0)}
-        >
-          <Image
-            src={event.images[0]}
-            alt={event.title}
-            fill
-            className="object-cover hover:scale-105 transition-transform duration-300"
-            sizes="(max-width: 768px) 100vw, 50vw"
-          />
-        </div>
-      );
-    } else if (event.images.length === 2) {
-      return (
-        <div className="grid grid-cols-2 gap-2">
-          {event.images.map((image, index) => (
-            <div 
-              key={index} 
-              className="h-48 relative rounded-lg overflow-hidden cursor-pointer"
-              onClick={() => openLightbox(index)}
-            >
-              <Image
-                src={image}
-                alt={`${event.title} ${index + 1}`}
-                fill
-                className="object-cover hover:scale-105 transition-transform duration-300"
-                sizes="(max-width: 768px) 50vw, 25vw"
-              />
-            </div>
-          ))}
-        </div>
-      );
-    } else if (event.images.length === 3) {
-      return (
-        <div className="grid grid-cols-2 gap-2">
-          <div 
-            className="h-96 relative rounded-lg overflow-hidden cursor-pointer"
-            onClick={() => openLightbox(0)}
-          >
-            <Image
-              src={event.images[0]}
-              alt={`${event.title} 1`}
-              fill
-              className="object-cover hover:scale-105 transition-transform duration-300"
-              sizes="(max-width: 768px) 50vw, 25vw"
-            />
-          </div>
-          <div className="grid grid-rows-2 gap-2">
-            {event.images.slice(1, 3).map((image, index) => (
-              <div 
-                key={index} 
-                className="h-[11.75rem] relative rounded-lg overflow-hidden cursor-pointer"
-                onClick={() => openLightbox(index + 1)}
-              >
-                <Image
-                  src={image}
-                  alt={`${event.title} ${index + 2}`}
-                  fill
-                  className="object-cover hover:scale-105 transition-transform duration-300"
-                  sizes="(max-width: 768px) 50vw, 25vw"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    } else {
-      return (
-        <div className="grid grid-cols-2 gap-2">
-          <div 
-            className="h-96 relative rounded-lg overflow-hidden cursor-pointer"
-            onClick={() => openLightbox(0)}
-          >
-            <Image
-              src={event.images[0]}
-              alt={`${event.title} 1`}
-              fill
-              className="object-cover hover:scale-105 transition-transform duration-300"
-              sizes="(max-width: 768px) 50vw, 25vw"
-            />
-          </div>
-          <div className="grid grid-rows-3 gap-2">
-            {event.images.slice(1, 4).map((image, index) => (
-              <div 
-                key={index} 
-                className="h-[7.67rem] relative rounded-lg overflow-hidden cursor-pointer"
-                onClick={() => openLightbox(index + 1)}
-              >
-                <Image
-                  src={image}
-                  alt={`${event.title} ${index + 2}`}
-                  fill
-                  className="object-cover hover:scale-105 transition-transform duration-300"
-                  sizes="(max-width: 768px) 50vw, 25vw"
-                />
-                {index === 2 && event.images!.length > 4 && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-bold text-xl">
-                    +{event.images!.length - 4}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      );
+    // 根据图片数量确定网格列数
+    let gridCols = "grid-cols-1";
+    if (event.images.length === 2) {
+      gridCols = "grid-cols-2";
+    } else if (event.images.length >= 3) {
+      gridCols = "grid-cols-3";
     }
+
+    // 限制最多显示6张图片，其余的在最后一张上显示+N
+    const displayImages = event.images.slice(0, 6);
+    const remainingCount = event.images.length - 6;
+
+    return (
+      <div className={`grid ${gridCols} gap-2`}>
+        {displayImages.map((image, index) => (
+          <div 
+            key={index} 
+            className="aspect-square relative rounded-lg overflow-hidden cursor-pointer"
+            onClick={() => openLightbox(index)}
+          >
+            <Image
+              src={image}
+              alt={`${event.title} ${index + 1}`}
+              fill
+              className="object-cover hover:scale-105 transition-transform duration-300"
+              sizes="(max-width: 768px) 33vw, 20vw"
+            />
+            {index === 5 && remainingCount > 0 && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-bold text-xl">
+                +{remainingCount}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -193,69 +120,95 @@ export default function TimelineItem({ event, onEditClick, onDeleteClick }: Time
         )}
       </div>
 
-      {/* 灯箱 */}
+      {/* 灯箱 - 全屏设计 */}
       <AnimatePresence>
         {isLightboxOpen && event.images && event.images.length > 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/95 z-[999] flex items-center justify-center p-0 overflow-hidden"
             onClick={closeLightbox}
+            style={{ touchAction: 'none' }}
           >
-            <button
-              className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors"
-              onClick={closeLightbox}
-              aria-label="关闭灯箱"
-            >
-              <FaTimes size={24} />
-            </button>
-            
-            {event.images.length > 1 && (
-              <>
-                <button
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
-                  onClick={prevImage}
-                  aria-label="上一张图片"
-                >
-                  <FaChevronLeft size={24} />
-                </button>
-                <button
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
-                  onClick={nextImage}
-                  aria-label="下一张图片"
-                >
-                  <FaChevronRight size={24} />
-                </button>
-              </>
-            )}
-            
-            <div className="relative w-full max-w-4xl max-h-[80vh] flex items-center justify-center">
-              <Image
-                src={event.images[currentImageIndex]}
-                alt={`${event.title} ${currentImageIndex + 1}`}
-                width={1200}
-                height={800}
-                className="max-h-[80vh] w-auto object-contain"
-                onClick={(e) => e.stopPropagation()}
-              />
+            {/* 美化的关闭按钮 - 右上角 */}
+            <div className="fixed top-4 right-4 z-[1000]">
+              <button
+                className="bg-black/70 hover:bg-black/90 text-white p-2 rounded-full shadow-lg transition-all duration-300 border border-white/50 backdrop-blur-sm"
+                onClick={closeLightbox}
+                aria-label="关闭灯箱"
+              >
+                <FaTimes size={18} />
+              </button>
             </div>
             
+            {/* 图片容器 - 完全全屏并确保居中 */}
+            <div className="absolute inset-0 flex items-center justify-center p-4 md:p-8">
+              <div className="relative w-full h-full max-h-[90vh] max-w-[90vw] flex items-center justify-center">
+                <Image
+                  src={event.images[currentImageIndex]}
+                  alt={`${event.title} ${currentImageIndex + 1}`}
+                  fill
+                  className="object-contain"
+                  sizes="100vw"
+                  onClick={(e) => e.stopPropagation()}
+                  priority
+                />
+                
+                {/* 左右切换按钮 - 缩小并优化样式 */}
+                {event.images.length > 1 && (
+                  <>
+                    <button
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full shadow-lg z-[1000] border border-white/30 backdrop-blur-sm transition-all duration-300"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        prevImage(e);
+                      }}
+                      aria-label="上一张图片"
+                    >
+                      <FaChevronLeft size={18} />
+                    </button>
+                    <button
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full shadow-lg z-[1000] border border-white/30 backdrop-blur-sm transition-all duration-300"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        nextImage(e);
+                      }}
+                      aria-label="下一张图片"
+                    >
+                      <FaChevronRight size={18} />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+            
+            {/* 底部指示器和计数器 - 简化版 */}
             {event.images.length > 1 && (
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-                {event.images.map((_, index) => (
-                  <button
-                    key={index}
-                    className={`w-2 h-2 rounded-full ${
-                      index === currentImageIndex ? 'bg-white' : 'bg-gray-500'
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCurrentImageIndex(index);
-                    }}
-                    aria-label={`查看第 ${index + 1} 张图片`}
-                  />
-                ))}
+              <div className="fixed bottom-4 left-0 right-0 flex justify-center items-center gap-2 z-[1000]">
+                <div className="bg-black/50 px-3 py-1.5 rounded-full flex items-center gap-3 backdrop-blur-sm border border-white/20">
+                  <span className="text-white text-xs font-medium">
+                    {currentImageIndex + 1} / {event.images.length}
+                  </span>
+                  
+                  <div className="flex items-center gap-1.5">
+                    {event.images.map((_, index) => (
+                      <button
+                        key={index}
+                        className={`w-1.5 h-1.5 rounded-full transition-all ${
+                          index === currentImageIndex 
+                            ? 'bg-white' 
+                            : 'bg-gray-500 hover:bg-gray-300'
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentImageIndex(index);
+                        }}
+                        aria-label={`查看第 ${index + 1} 张图片`}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </motion.div>
@@ -263,4 +216,4 @@ export default function TimelineItem({ event, onEditClick, onDeleteClick }: Time
       </AnimatePresence>
     </div>
   );
-} 
+}

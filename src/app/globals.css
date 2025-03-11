@@ -209,3 +209,36 @@ body {
   border-radius: 0.375em;
   margin: 1em 0;
 }
+
+/* 灯箱按钮样式 */
+.shadow-glow {
+  box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.6);
+}
+
+/* 灯箱控制按钮悬停效果 */
+.lightbox-btn {
+  transition: all 0.2s ease;
+}
+
+.lightbox-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 15px 3px rgba(255, 255, 255, 0.4);
+}
+
+/* 自定义脉冲动画 */
+@keyframes custom-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+  }
+}
+
+.animate-custom-pulse {
+  animation: custom-pulse 2s infinite;
+}

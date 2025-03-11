@@ -61,6 +61,13 @@ export default function TimelineForm({
     };
     
     if (!date) newErrors.date = '请选择日期';
+    // 验证日期格式和年份位数
+    if (date) {
+      const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+      if (!datePattern.test(date)) {
+        newErrors.date = '日期格式不正确';
+      }
+    }
     if (!title) newErrors.title = '请输入标题';
     if (!content) newErrors.content = '请输入内容';
     
@@ -151,7 +158,8 @@ export default function TimelineForm({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4"
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4 overflow-hidden"
+      style={{ touchAction: 'none' }}
     >
       <div 
         ref={formRef}
@@ -178,7 +186,15 @@ export default function TimelineForm({
             <input
               type="date"
               value={date}
-              onChange={(e) => setDate(e.target.value)}
+              onChange={(e) => {
+                // 限制日期输入，确保年份为4位数
+                const inputDate = e.target.value;
+                const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+                if (!inputDate || datePattern.test(inputDate)) {
+                  setDate(inputDate);
+                }
+              }}
+              max="9999-12-31" // 设置最大日期，限制年份为4位数
               className={`w-full px-4 py-2 border ${
                 errors.date ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
               } rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-white`}
@@ -230,7 +246,7 @@ export default function TimelineForm({
             
             <div className="flex flex-col gap-4">
               {/* 上传图片 */}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -252,7 +268,7 @@ export default function TimelineForm({
                 </button>
                 
                 {/* 或者添加图片URL */}
-                <div className="flex-1 flex gap-2">
+                <div className="flex-1 flex gap-2 w-full mt-2 sm:mt-0">
                   <input
                     type="text"
                     value={imageUrl}
@@ -287,10 +303,10 @@ export default function TimelineForm({
               
               {/* 已添加的图片预览 */}
               {images.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
                   {images.map((image, index) => (
                     <div key={index} className="relative group">
-                      <div className="aspect-square relative rounded-md overflow-hidden">
+                      <div className="aspect-square relative rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
                         <Image
                           src={image}
                           alt={`图片 ${index + 1}`}
@@ -302,7 +318,7 @@ export default function TimelineForm({
                       <button
                         type="button"
                         onClick={() => handleRemoveImage(index)}
-                        className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                         aria-label="删除图片"
                       >
                         <FaTrash size={12} />
@@ -333,4 +349,4 @@ export default function TimelineForm({
       </div>
     </motion.div>
   );
-} 
+}

@@ -1,21 +1,21 @@
+// 添加时间戳或随机参数到图片URL，防止缓存
+export function addCacheBuster(url: string): string {
+  if (!url) return url;
+  const cacheBuster = `?t=${Date.now()}`;
+  return url.includes('?') ? `${url}&t=${Date.now()}` : `${url}${cacheBuster}`;
+}
+
 // 获取背景图片列表
 export async function getBackgrounds(): Promise<string[]> {
   try {
-    const response = await fetch('/api/backgrounds', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-    });
-
+    // 为API请求添加缓存破坏参数
+    const response = await fetch(addCacheBuster('/api/backgrounds'));
     if (response.ok) {
       const data = await response.json();
-      return data;
-    } else {
-      console.error('从服务器获取背景图片失败');
-      return [];
+      // 直接返回背景图片URL，不添加缓存破坏参数
+      return data.backgrounds || [];
     }
+    return [];
   } catch (error) {
     console.error('获取背景图片失败:', error);
     return [];
