@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaEnvelope, FaTimes, FaEdit, FaCheck, FaLock } from 'react-icons/fa';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // 正确的密码
 const CORRECT_PASSWORD = '241214';
@@ -222,9 +224,31 @@ export default function Envelope({ onModalChange }: EnvelopeProps) {
                     placeholder="在这里编辑信件内容，支持Markdown格式..."
                   />
                 ) : (
-                  <pre className="prose prose-sm sm:prose max-w-none text-black font-serif overflow-y-auto whitespace-pre-wrap">
-                    {letterContent || `# 亲爱的\n\n这是我写给你的一封信，希望你能喜欢。\n\n## 我想对你说\n\n* 感谢你一直陪伴在我身边\n* 希望我们的未来更加美好\n* 我会一直爱你\n\n> 爱是一种选择，而我选择了你。\n\n祝你每天都开心！`}
-                  </pre>
+                  <div className="prose prose-sm sm:prose max-w-none text-black font-serif overflow-y-auto">
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        p: ({node, ...props}) => <p style={{color: 'black', whiteSpace: 'pre-wrap'}} {...props}/>,
+                        li: ({node, ...props}) => <li style={{color: 'black'}} {...props}/>,
+                        ol: ({node, ...props}) => <ol style={{color: 'black'}} {...props}/>,
+                        ul: ({node, ...props}) => <ul style={{color: 'black'}} {...props}/>
+                      }}
+                    >
+                      {letterContent || `# 亲爱的
+
+这是我写给你的一封信，希望你能喜欢。
+
+## 我想对你说
+
+* 感谢你一直陪伴在我身边
+* 希望我们的未来更加美好
+* 我会一直爱你
+
+> 爱是一种选择，而我选择了你。
+
+祝你每天都开心！`}
+                    </ReactMarkdown>
+                  </div>
                 )}
               </div>
             </motion.div>

@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaGift, FaTimes, FaEdit, FaCheck, FaLock } from 'react-icons/fa';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // 正确的密码
 const CORRECT_PASSWORD = '241214';
@@ -221,9 +223,31 @@ export default function Gift({ onModalChange }: GiftProps) {
                   placeholder="在这里编辑礼物内容，支持Markdown格式..."
                 />
               ) : (
-                <pre className="prose prose-sm sm:prose max-w-none text-black font-serif overflow-y-auto whitespace-pre-wrap">
-                  {giftContent || `# 小惊喜 🎁\n\n亲爱的，这是我为你准备的特别惊喜！\n\n## 惊喜清单\n\n1. **一份特别的礼物** - 等你来发现\n2. **一段美好的回忆** - 我们一起创造\n3. **一个温暖的拥抱** - 随时为你准备\n\n> 爱是最好的礼物，而你是我最珍贵的礼物。\n\n期待与你一起度过更多美好时光！❤️`}
-                </pre>
+                <div className="prose prose-sm sm:prose max-w-none text-black font-serif overflow-y-auto">
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      p: ({node, ...props}) => <p style={{color: 'black', whiteSpace: 'pre-wrap'}} {...props}/>,
+                      li: ({node, ...props}) => <li style={{color: 'black'}} {...props}/>,
+                      ol: ({node, ...props}) => <ol style={{color: 'black'}} {...props}/>,
+                      ul: ({node, ...props}) => <ul style={{color: 'black'}} {...props}/>
+                    }}
+                  >
+                    {giftContent || `# 小惊喜 🎁
+
+亲爱的，这是我为你准备的特别惊喜！
+
+## 惊喜清单
+
+1. **一份特别的礼物** - 等你来发现
+2. **一段美好的回忆** - 我们一起创造
+3. **一个温暖的拥抱** - 随时为你准备
+
+> 爱是最好的礼物，而你是我最珍贵的礼物。
+
+期待与你一起度过更多美好时光！❤️`}
+                  </ReactMarkdown>
+                </div>
               )}
             </motion.div>
           </motion.div>
@@ -285,4 +309,4 @@ export default function Gift({ onModalChange }: GiftProps) {
       </AnimatePresence>
     </div>
   );
-} 
+}
