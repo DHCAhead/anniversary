@@ -274,9 +274,18 @@ export default function BackgroundUploader({ onModalChange }: BackgroundUploader
               exit={{ scale: 0.9, y: 20 }}
               className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto"
             >
-              <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
-                背景图片管理
-              </h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-800 dark:text-white">
+                  背景图片管理
+                </h3>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full transition-colors"
+                  aria-label="关闭"
+                >
+                  <FaTimes size={20} />
+                </button>
+              </div>
               
               {/* 标签页切换 */}
               <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
