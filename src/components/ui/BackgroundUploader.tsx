@@ -88,6 +88,15 @@ export default function BackgroundUploader({ onModalChange }: BackgroundUploader
       
       // 添加多个文件
       selectedFiles.forEach(file => {
+        // 检查是否为HEIC/HEIF格式
+        const isLivePhoto = file.name.toLowerCase().endsWith('.heic') || 
+                           file.name.toLowerCase().endsWith('.heif');
+        
+        if (isLivePhoto) {
+          // 对于Live图，添加特殊标记
+          formData.append('hasLivePhotos', 'true');
+        }
+        
         formData.append('files', file);
       });
       
@@ -272,178 +281,219 @@ export default function BackgroundUploader({ onModalChange }: BackgroundUploader
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto"
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full h-[80vh] flex flex-col relative overflow-hidden"
             >
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold text-gray-800 dark:text-white">
-                  背景图片管理
-                </h3>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full transition-colors"
-                  aria-label="关闭"
-                >
-                  <FaTimes size={20} />
-                </button>
-              </div>
-              
-              {/* 标签页切换 */}
-              <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
-                <button
-                  onClick={() => setActiveTab('upload')}
-                  className={`py-2 px-4 font-medium ${
-                    activeTab === 'upload'
-                      ? 'text-primary border-b-2 border-primary'
-                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                  }`}
-                >
-                  上传图片
-                </button>
-                <button
-                  onClick={() => setActiveTab('manage')}
-                  className={`py-2 px-4 font-medium ${
-                    activeTab === 'manage'
-                      ? 'text-primary border-b-2 border-primary'
-                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                  }`}
-                >
-                  管理图片
-                </button>
-              </div>
-              
-              {/* 上传图片内容 */}
-              {activeTab === 'upload' && (
-                <div className="space-y-4">
-                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
-                    <input
-                      type="file"
-                      id="file-upload"
-                      className="hidden"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      multiple // 允许多文件选择
-                    />
-                    <label
-                      htmlFor="file-upload"
-                      className="cursor-pointer flex flex-col items-center justify-center"
-                    >
-                      <FaUpload className="text-gray-400 dark:text-gray-500 text-3xl mb-2" />
-                      <p className="text-gray-600 dark:text-gray-300 mb-1">
-                        点击选择一张或多张图片
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        支持 JPG, PNG, GIF 格式，可一次选择多张图片
-                      </p>
-                    </label>
-                  </div>
-
-                  {selectedFiles.length > 0 && (
-                    <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
-                      <p className="text-gray-800 dark:text-gray-200 text-sm mb-2">
-                        已选择 {selectedFiles.length} 张图片:
-                      </p>
-                      <div className="max-h-32 overflow-y-auto">
-                        {selectedFiles.map((file, index) => (
-                          <p key={index} className="text-gray-600 dark:text-gray-300 text-xs truncate ml-2">
-                            {index + 1}. {file.name}
-                          </p>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {isUploading && (
-                    <div className="mt-4">
-                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                        <div
-                          className="bg-primary h-2.5 rounded-full"
-                          style={{ width: `${uploadProgress}%` }}
-                        ></div>
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 text-center">
-                        上传中... {uploadProgress}%
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="flex justify-end mt-4">
+              {/* 固定的头部区域（标题栏和标签栏作为一个整体） */}
+              <div className="absolute top-0 left-0 right-0 z-20 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                {/* 标题栏 */}
+                <div className="flex justify-between items-center p-6 pb-3">
+                  <h3 className="text-xl font-bold text-gray-800 dark:text-white">
+                    背景图片管理
+                  </h3>
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full transition-colors"
+                    aria-label="关闭"
+                  >
+                    <FaTimes size={20} />
+                  </button>
+                </div>
+                
+                {/* 标签页切换 */}
+                <div className="px-6 pb-3">
+                  <div className="flex mb-3">
                     <button
-                      onClick={handleUpload}
-                      disabled={selectedFiles.length === 0 || isUploading}
-                      className={`w-full py-2 rounded-md transition-colors ${
-                        selectedFiles.length === 0 || isUploading
-                          ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                          : 'bg-primary hover:bg-primary/80 text-white'
+                      onClick={() => setActiveTab('upload')}
+                      className={`py-2 px-4 font-medium ${
+                        activeTab === 'upload'
+                          ? 'text-primary border-b-2 border-primary'
+                          : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                       }`}
                     >
-                      {isUploading ? '上传中...' : `上传 ${selectedFiles.length} 张背景图片`}
+                      上传图片
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('manage')}
+                      className={`py-2 px-4 font-medium ${
+                        activeTab === 'manage'
+                          ? 'text-primary border-b-2 border-primary'
+                          : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                      }`}
+                    >
+                      管理图片
                     </button>
                   </div>
                 </div>
-              )}
+              </div>
               
-              {/* 管理图片内容 */}
-              {activeTab === 'manage' && (
-                <div>
-                  {backgrounds.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-gray-600 dark:text-gray-300 mb-4">
-                        暂无背景图片，请先上传
-                      </p>
-                      <button
-                        onClick={() => setActiveTab('upload')}
-                        className="px-4 py-2 bg-primary hover:bg-primary/80 text-white rounded-md flex items-center gap-2 mx-auto"
+              {/* 可滚动的内容区域 - 添加足够的上边距以避开固定的头部区域 */}
+              <div className="flex-1 overflow-y-auto p-6 pt-[170px] pb-[70px] overscroll-contain">
+                {/* 可左右滑动的内容容器 */}
+                <div className="touch-pan-y">
+                  <AnimatePresence mode="wait">
+                    {/* 上传图片内容 */}
+                    {activeTab === 'upload' && (
+                      <motion.div 
+                        key="upload"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-4"
                       >
-                        <FaPlus size={16} />
-                        添加图片
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                      {backgrounds.map((bg, index) => (
-                        <div key={index} className="relative group border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                          <div 
-                            className="aspect-video relative cursor-pointer" 
-                            onClick={() => handleOpenPreview(bg)}
+                        <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                          <input
+                            type="file"
+                            id="file-upload"
+                            className="hidden"
+                            accept="image/*,.heic,.heif"
+                            onChange={handleFileChange}
+                            multiple // 允许多文件选择
+                          />
+                          <label
+                            htmlFor="file-upload"
+                            className="cursor-pointer flex flex-col items-center justify-center"
                           >
-                            <Image
-                              src={bg}
-                              alt={`背景图片 ${index + 1}`}
-                              fill
-                              className="object-cover"
-                              sizes="(max-width: 768px) 100vw, 33vw"
-                            />
-                            <div className="absolute top-2 right-2 z-10">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation(); // 阻止事件冒泡，避免触发图片预览
-                                  handleDeleteBackground(bg);
-                                }}
-                                disabled={isDeleting}
-                                className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-md opacity-70 hover:opacity-100 transition-opacity"
-                                aria-label="删除图片"
-                              >
-                                <FaTrash size={14} />
-                              </button>
-                            </div>
-                            <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center">
-                              <FaExpand className="text-white opacity-0 group-hover:opacity-80 transition-opacity" size={24} />
+                            <FaUpload className="text-gray-400 dark:text-gray-500 text-3xl mb-2" />
+                            <p className="text-gray-600 dark:text-gray-300 mb-1">
+                              点击选择一张或多张图片
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                              支持 JPG, PNG, GIF, HEIC/HEIF(Live图) 格式
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              可一次选择多张图片
+                            </p>
+                          </label>
+                        </div>
+
+                        {selectedFiles.length > 0 && (
+                          <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
+                            <p className="text-gray-800 dark:text-gray-200 text-sm mb-2">
+                              已选择 {selectedFiles.length} 张图片:
+                            </p>
+                            <div className="max-h-32 overflow-y-auto">
+                              {selectedFiles.map((file, index) => (
+                                <p key={index} className="text-gray-600 dark:text-gray-300 text-xs truncate ml-2">
+                                  {index + 1}. {file.name}
+                                </p>
+                              ))}
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+                        )}
 
-              <div className="flex justify-end mt-4">
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  关闭
-                </button>
+                        {isUploading && (
+                          <div className="mt-4">
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                              <div
+                                className="bg-primary h-2.5 rounded-full"
+                                style={{ width: `${uploadProgress}%` }}
+                              ></div>
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 text-center">
+                              上传中... {uploadProgress}%
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="flex justify-end mt-4">
+                          <button
+                            onClick={handleUpload}
+                            disabled={selectedFiles.length === 0 || isUploading}
+                            className={`w-full py-2 rounded-md transition-colors ${
+                              selectedFiles.length === 0 || isUploading
+                                ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                                : 'bg-primary hover:bg-primary/80 text-white'
+                            }`}
+                          >
+                            {isUploading ? '上传中...' : `上传 ${selectedFiles.length} 张背景图片`}
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                    
+                    {/* 管理图片内容 */}
+                    {activeTab === 'manage' && (
+                      <motion.div 
+                        key="manage"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        {backgrounds.length === 0 ? (
+                          <div className="text-center py-8">
+                            <p className="text-gray-600 dark:text-gray-300 mb-4">
+                              暂无背景图片，请先上传
+                            </p>
+                            <button
+                              onClick={() => {
+                                setActiveTab('upload');
+                              }}
+                              className="px-4 py-2 bg-primary hover:bg-primary/80 text-white rounded-md flex items-center gap-2 mx-auto"
+                            >
+                              <FaPlus size={16} />
+                              添加图片
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                            {backgrounds.map((bg, index) => (
+                              <div key={index} className="relative group border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                                <div 
+                                  className="aspect-video relative cursor-pointer" 
+                                  onClick={() => handleOpenPreview(bg)}
+                                >
+                                  <Image
+                                    src={bg}
+                                    alt={`背景图片 ${index + 1}`}
+                                    fill
+                                    className="object-cover"
+                                    sizes="(max-width: 768px) 100vw, 33vw"
+                                  />
+                                  {/* Live图标识 */}
+                                  {bg.toLowerCase().endsWith('.heic') || bg.toLowerCase().endsWith('.heif') ? (
+                                    <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-md">
+                                      Live
+                                    </div>
+                                  ) : null}
+                                  <div className="absolute top-2 right-2 z-10">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation(); // 阻止事件冒泡，避免触发图片预览
+                                        handleDeleteBackground(bg);
+                                      }}
+                                      disabled={isDeleting}
+                                      className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-md opacity-70 hover:opacity-100 transition-opacity"
+                                      aria-label="删除图片"
+                                    >
+                                      <FaTrash size={14} />
+                                    </button>
+                                  </div>
+                                  <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center">
+                                    <FaExpand className="text-white opacity-0 group-hover:opacity-80 transition-opacity" size={24} />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+              
+              {/* 绝对固定的底部按钮区域 */}
+              <div className="absolute bottom-0 left-0 right-0 z-20 bg-white dark:bg-gray-800 p-6 pt-3 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    关闭
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>

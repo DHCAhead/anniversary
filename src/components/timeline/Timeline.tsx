@@ -67,6 +67,8 @@ export default function Timeline({ onModalChange }: TimelineProps) {
       setTimeout(() => {
         setSaveStatus('idle');
       }, 3000);
+
+      return success; // 返回保存结果
     } catch (error) {
       console.error('保存事件失败:', error);
       setSaveStatus('error');
@@ -75,6 +77,8 @@ export default function Timeline({ onModalChange }: TimelineProps) {
       setTimeout(() => {
         setSaveStatus('idle');
       }, 3000);
+
+      return false; // 发生错误时返回false
     }
   };
 
@@ -186,26 +190,33 @@ export default function Timeline({ onModalChange }: TimelineProps) {
                 body: JSON.stringify({ imageUrl }),
               });
               
-              if (response.ok) {
-                console.log('图片删除成功:', imageUrl);
-              } else {
-                console.error('图片删除失败:', imageUrl, await response.text());
+              if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`删除图片失败: ${errorText}`);
               }
+              
+              console.log('图片删除成功:', imageUrl);
             } catch (err) {
               console.error('删除图片出错:', imageUrl, err);
+              throw err; // 向上抛出错误，中断删除过程
             }
           }
         }
       }
       
-      // 更新事件列表
+      // 所有图片删除成功后，更新事件列表
       const updatedEvents = events.filter(event => event.id !== deletingEvent.id);
+      
+      // 先保存到服务器
+      const saveSuccess = await saveEvents(updatedEvents);
+      if (!saveSuccess) {
+        throw new Error('保存事件列表失败');
+      }
+      
+      // 保存成功后更新状态
       setEvents(updatedEvents);
       setIsDeleteConfirmOpen(false);
       setDeletingEvent(null);
-      
-      // 保存到服务器
-      await saveEvents(updatedEvents);
       
       alert('回忆及相关图片已成功删除');
     } catch (error) {

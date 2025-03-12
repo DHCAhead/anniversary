@@ -38,7 +38,11 @@ export default function TimelineForm({
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
-
+  
+  // 新增本地图片文件存储
+  const [localImageFiles, setLocalImageFiles] = useState<File[]>([]);
+  // 新增本地图片预览URL
+  const [localImagePreviews, setLocalImagePreviews] = useState<string[]>([]);
   // 表单验证
   const [errors, setErrors] = useState({
     date: '',
@@ -77,30 +81,12 @@ export default function TimelineForm({
     return !Object.values(newErrors).some(error => error);
   };
 
-  // 处理表单提交
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (validateForm()) {
-      onSubmit({
-        date,
-        title,
-        content,
-        images
-      });
-    }
-  };
-
-  // 处理图片上传
+  // 处理图片上传 - 修改为只预览不上传
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     
-    setIsUploading(true);
-    setUploadProgress(10);
-
     try {
       const files = Array.from(e.target.files);
-      const formData = new FormData();
       
       // 尝试从第一张图片中获取拍摄时间
       try {
@@ -113,43 +99,24 @@ export default function TimelineForm({
         console.error('读取图片EXIF信息失败:', error);
       }
       
-      // 添加多个文件
-      files.forEach(file => {
-        formData.append('files', file);
-      });
+      // 存储文件以便稍后上传
+      setLocalImageFiles(prevFiles => [...prevFiles, ...files]);
       
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData
-      });
-      
-      setUploadProgress(70);
-      
-      if (!response.ok) {
-        throw new Error('上传失败');
-      }
-      
-      const data = await response.json();
-      setUploadProgress(100);
-      
-      // 添加新上传的图片URL到图片列表
-      const newUrls = data.urls || [data.url];
-      setImages(prev => [...prev, ...newUrls]);
+      // 为每个文件创建本地预览URL
+      const newPreviewUrls = files.map(file => URL.createObjectURL(file));
+      setLocalImagePreviews(prevUrls => [...prevUrls, ...newPreviewUrls]);
       
       // 清空文件输入
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     } catch (error) {
-      console.error('上传图片失败:', error);
-      alert('上传图片失败，请重试');
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
+      console.error('处理图片失败:', error);
+      alert('处理图片失败，请重试');
     }
   };
 
-  // 添加图片URL
+  // 添加图片URL - 保持不变
   const handleAddImageUrl = () => {
     if (!imageUrl) return;
     
@@ -161,37 +128,140 @@ export default function TimelineForm({
       return;
     }
     
+    // 添加到已有图片URL列表
     setImages(prev => [...prev, imageUrl]);
     setImageUrl('');
   };
 
-  // 删除图片
-  const handleRemoveImage = async (index: number) => {
-    const imageToDelete = images[index];
+  // 删除本地预览图片
+  const handleRemoveLocalImage = (index: number) => {
+    // 释放对象URL以避免内存泄漏
+    URL.revokeObjectURL(localImagePreviews[index]);
+    
+    // 从预览和文件列表中移除
+    setLocalImagePreviews(prev => prev.filter((_, i) => i !== index));
+    setLocalImageFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // 删除已上传的图片
+  const handleRemoveImage = (index: number) => {
+    // 从显示列表中移除
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // 处理表单提交 - 修改为同步服务端图片状态
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+    
+    setIsUploading(true);
+    setUploadProgress(10);
     
     try {
-      // 检查是否为上传的图片
-      if (imageToDelete.startsWith('/uploads/')) {
-        // 删除服务器上的文件
-        const response = await fetch('/api/upload/delete', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ imageUrl: imageToDelete }),
-        });
-        
-        if (!response.ok) {
-          console.error('删除服务器图片失败:', imageToDelete);
+      // 1. 找出需要删除的服务器图片
+      const serverImages = initialData?.images || [];
+      const currentImages = images.filter(img => img.startsWith('/uploads/') || img.startsWith('/backgrounds/'));
+      const imagesToDelete = serverImages.filter(img => !currentImages.includes(img));
+      
+      // 2. 删除多余的服务器图片
+      if (imagesToDelete.length > 0) {
+        setUploadProgress(20);
+        for (const imageUrl of imagesToDelete) {
+          try {
+            // 只处理服务器上的图片
+            if (!imageUrl.startsWith('/uploads/') && !imageUrl.startsWith('/backgrounds/')) {
+              continue;
+            }
+
+            const response = await fetch('/api/upload/delete', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ imageUrl }),
+            });
+            
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({}));
+              throw new Error(errorData.message || `删除图片失败: ${imageUrl}`);
+            }
+          } catch (error) {
+            console.error('删除图片失败:', error);
+            const errorMessage = error instanceof Error ? error.message : '未知错误';
+            alert(`删除图片失败: ${errorMessage}`);
+            setIsUploading(false);
+            setUploadProgress(0);
+            return;
+          }
         }
       }
       
-      // 从列表中移除图片
-      setImages(prev => prev.filter((_, i) => i !== index));
+      setUploadProgress(40);
+      
+      // 3. 上传新图片
+      let newUrls: string[] = [];
+      if (localImageFiles.length > 0) {
+        const formData = new FormData();
+        formData.append('type', 'uploads');
+        
+        localImageFiles.forEach(file => {
+          formData.append('files', file);
+        });
+        
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        setUploadProgress(70);
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || '上传失败');
+        }
+        
+        const data = await response.json();
+        newUrls = data.urls || [data.url];
+      }
+      
+      setUploadProgress(90);
+      
+      // 清理所有本地预览URL
+      localImagePreviews.forEach(url => URL.revokeObjectURL(url));
+      
+      // 4. 提交表单
+      // 保留非服务器图片（如外部URL）和服务器上的图片，加上新上传的图片
+      const externalImages = images.filter(img => !img.startsWith('/uploads/') && !img.startsWith('/backgrounds/'));
+      onSubmit({
+        date,
+        title,
+        content,
+        images: [...externalImages, ...currentImages, ...newUrls]
+      });
+      
+      setUploadProgress(100);
     } catch (error) {
-      console.error('删除图片失败:', error);
-      alert('删除图片失败，请重试');
+      console.error('保存失败:', error);
+      alert('保存失败，请重试');
+      setIsUploading(false);
+      setUploadProgress(0);
     }
+  };
+
+  // 处理取消按钮点击 - 清理所有临时状态
+  const handleCancel = () => {
+    // 清理所有本地预览URL
+    localImagePreviews.forEach(url => URL.revokeObjectURL(url));
+    // 清空所有临时状态
+    setLocalImageFiles([]);
+    setLocalImagePreviews([]);
+    // 如果是编辑模式，恢复初始图片列表
+    if (isEdit && initialData) {
+      setImages(initialData.images);
+    }
+    // 调用父组件的取消函数
+    onCancel();
   };
 
   return (
@@ -211,7 +281,7 @@ export default function TimelineForm({
             {isEdit ? '编辑回忆' : '添加回忆'}
           </h2>
           <button
-            onClick={onCancel}
+            onClick={handleCancel}
             className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
             aria-label="关闭"
           >
@@ -306,7 +376,7 @@ export default function TimelineForm({
                   disabled={isUploading}
                 >
                   <FaUpload size={16} />
-                  上传图片
+                  选择图片
                 </button>
                 
                 {/* 或者添加图片URL */}
@@ -343,30 +413,67 @@ export default function TimelineForm({
                 </div>
               )}
               
-              {/* 已添加的图片预览 */}
-              {images.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
-                  {images.map((image, index) => (
-                    <div key={index} className="relative group">
-                      <div className="aspect-square relative rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
-                        <Image
-                          src={image}
-                          alt={`图片 ${index + 1}`}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 50vw, 33vw"
-                        />
+              {/* 本地预览图片 */}
+              {localImagePreviews.length > 0 && (
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    待上传图片 ({localImagePreviews.length}张):
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {localImagePreviews.map((previewUrl, index) => (
+                      <div key={`local-${index}`} className="relative group">
+                        <div className="aspect-square relative rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
+                          <Image
+                            src={previewUrl}
+                            alt={`预览图片 ${index + 1}`}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 50vw, 33vw"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveLocalImage(index)}
+                          className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                          aria-label="删除图片"
+                        >
+                          <FaTrash size={12} />
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImage(index)}
-                        className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
-                        aria-label="删除图片"
-                      >
-                        <FaTrash size={12} />
-                      </button>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* 已添加的图片URL */}
+              {images.length > 0 && (
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    已添加图片 ({images.length}张):
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {images.map((image, index) => (
+                      <div key={`remote-${index}`} className="relative group">
+                        <div className="aspect-square relative rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
+                          <Image
+                            src={image}
+                            alt={`图片 ${index + 1}`}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 50vw, 33vw"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(index)}
+                          className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                          aria-label="删除图片"
+                        >
+                          <FaTrash size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -375,7 +482,7 @@ export default function TimelineForm({
           <div className="flex justify-end gap-2">
             <button
               type="button"
-              onClick={onCancel}
+              onClick={handleCancel}
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
               取消
@@ -383,8 +490,9 @@ export default function TimelineForm({
             <button
               type="submit"
               className="px-4 py-2 bg-primary hover:bg-primary/80 text-white rounded-md transition-colors"
+              disabled={isUploading}
             >
-              {isEdit ? '保存修改' : '添加回忆'}
+              {isEdit ? '保存修改' : '保存'}
             </button>
           </div>
         </form>

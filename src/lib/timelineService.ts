@@ -47,14 +47,19 @@ export async function saveTimelineEvents(events: TimelineEvent[]): Promise<boole
       saveLocalEvents(events);
       return true;
     } else {
-      console.error('保存到服务器失败，仅保存到本地存储');
-      // 如果服务器保存失败，仅保存到本地存储
+      console.error('保存到服务器失败，尝试保存到本地存储');
+      // 保存到本地存储
       saveLocalEvents(events);
+      
+      // 尝试解析错误信息
+      const errorData = await response.json().catch(() => ({}));
+      console.error('服务器错误:', errorData.message || '未知错误');
+      
       return false;
     }
   } catch (error) {
-    console.error('保存时间轴事件失败:', error);
-    // 如果API请求失败，仅保存到本地存储
+    console.error('保存事件失败:', error);
+    // 发生错误时也尝试保存到本地存储
     saveLocalEvents(events);
     return false;
   }

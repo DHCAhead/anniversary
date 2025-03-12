@@ -72,7 +72,7 @@ export default function BackgroundSlider({
               alt="Background"
               fill
               priority={currentIndex === 0}
-              quality={75}
+              quality={100}
               onLoad={handleImageLoad}
               className="object-cover"
               style={{ objectPosition: 'center' }}
