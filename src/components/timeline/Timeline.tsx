@@ -8,6 +8,7 @@ import PasswordModal from './PasswordModal';
 import { FaPlus } from 'react-icons/fa';
 import { getTimelineEvents, saveTimelineEvents } from '@/lib/timelineService';
 import { TimelineEvent } from '@/app/api/timeline/route';
+import { setPasswordToken } from '@/lib/passwordService';
 
 // 正确的密码
 const CORRECT_PASSWORD = '241214';
@@ -103,7 +104,20 @@ export default function Timeline({ onModalChange }: TimelineProps) {
 
   // 处理密码验证
   const handlePasswordVerify = (password: string) => {
+    // 如果是通过token验证，直接通过
+    if (password === '') {
+      setIsPasswordModalOpen(false);
+      
+      if (currentAction === 'delete' && deletingEvent) {
+        setIsDeleteConfirmOpen(true);
+      } else {
+        setIsFormOpen(true);
+      }
+      return;
+    }
+
     if (password === CORRECT_PASSWORD) {
+      setPasswordToken();
       setIsPasswordModalOpen(false);
       
       if (currentAction === 'delete' && deletingEvent) {

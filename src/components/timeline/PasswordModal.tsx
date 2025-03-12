@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FaLock } from 'react-icons/fa';
+import { checkPasswordToken } from '@/lib/passwordService';
 
 interface PasswordModalProps {
   onVerify: (password: string) => void;
@@ -14,12 +15,17 @@ export default function PasswordModal({ onVerify, onCancel, action }: PasswordMo
   const [password, setPassword] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   
-  // 自动聚焦输入框
+  // 检查是否有有效的密码验证token
   useEffect(() => {
+    if (checkPasswordToken()) {
+      onVerify('');
+      return;
+    }
+    
     if (inputRef.current) {
       inputRef.current.focus();
     }
-  }, []);
+  }, [onVerify]);
   
   // 处理提交
   const handleSubmit = (e: React.FormEvent) => {
@@ -94,4 +100,4 @@ export default function PasswordModal({ onVerify, onCancel, action }: PasswordMo
       </motion.div>
     </motion.div>
   );
-} 
+}

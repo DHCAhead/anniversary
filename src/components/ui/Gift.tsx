@@ -7,6 +7,8 @@ import { FaGift, FaTimes, FaEdit, FaCheck, FaLock } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+import { checkPasswordToken, setPasswordToken } from '@/lib/passwordService';
+
 // 正确的密码
 const CORRECT_PASSWORD = '241214';
 
@@ -93,12 +95,18 @@ export default function Gift({ onModalChange }: GiftProps) {
 
   // 开始编辑礼物
   const handleEdit = () => {
+    if (checkPasswordToken()) {
+      setEditContent(giftContent);
+      setIsEditing(true);
+      return;
+    }
     setIsPasswordModalOpen(true);
   };
 
   // 验证密码
   const handleVerifyPassword = () => {
     if (password === CORRECT_PASSWORD) {
+      setPasswordToken();
       setIsPasswordModalOpen(false);
       setEditContent(giftContent);
       setIsEditing(true);

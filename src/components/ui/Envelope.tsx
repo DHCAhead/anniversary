@@ -10,6 +10,8 @@ import remarkGfm from 'remark-gfm';
 // 正确的密码
 const CORRECT_PASSWORD = '241214';
 
+import { checkPasswordToken, setPasswordToken } from '@/lib/passwordService';
+
 interface EnvelopeProps {
   onModalChange?: (isOpen: boolean) => void;
 }
@@ -93,12 +95,18 @@ export default function Envelope({ onModalChange }: EnvelopeProps) {
 
   // 开始编辑信件
   const handleEdit = () => {
+    if (checkPasswordToken()) {
+      setEditContent(letterContent);
+      setIsEditing(true);
+      return;
+    }
     setIsPasswordModalOpen(true);
   };
 
   // 验证密码
   const handleVerifyPassword = () => {
     if (password === CORRECT_PASSWORD) {
+      setPasswordToken();
       setIsPasswordModalOpen(false);
       setEditContent(letterContent);
       setIsEditing(true);

@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FaImage, FaUpload, FaLock, FaTrash, FaPlus } from 'react-icons/fa';
+import { FaImage, FaUpload, FaLock, FaTrash, FaPlus, FaTimes, FaExpand } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { addBackground, getBackgrounds, removeBackground } from '@/lib/backgroundService';
 import Image from 'next/image';
+import { checkPasswordToken, setPasswordToken } from '@/lib/passwordService';
 
 // 正确的密码
 const CORRECT_PASSWORD = '241214';
@@ -23,13 +24,14 @@ export default function BackgroundUploader({ onModalChange }: BackgroundUploader
   const [backgrounds, setBackgrounds] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState<'upload' | 'manage'>('upload');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // 通知父组件弹窗状态变化
   useEffect(() => {
     if (onModalChange) {
-      onModalChange(isOpen || isPasswordModalOpen);
+      onModalChange(isOpen || isPasswordModalOpen || previewImage !== null);
     }
-  }, [isOpen, isPasswordModalOpen, onModalChange]);
+  }, [isOpen, isPasswordModalOpen, previewImage, onModalChange]);
 
   // 获取背景图片列表
   useEffect(() => {
@@ -45,12 +47,17 @@ export default function BackgroundUploader({ onModalChange }: BackgroundUploader
 
   // 打开背景管理器
   const handleOpenManager = () => {
+    if (checkPasswordToken()) {
+      setIsOpen(true);
+      return;
+    }
     setIsPasswordModalOpen(true);
   };
 
   // 验证密码
   const handleVerifyPassword = () => {
     if (password === CORRECT_PASSWORD) {
+      setPasswordToken();
       setIsPasswordModalOpen(false);
       setIsOpen(true);
       setPassword('');
@@ -176,6 +183,16 @@ export default function BackgroundUploader({ onModalChange }: BackgroundUploader
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  // 打开图片预览
+  const handleOpenPreview = (imageUrl: string) => {
+    setPreviewImage(imageUrl);
+  };
+
+  // 关闭图片预览
+  const handleClosePreview = () => {
+    setPreviewImage(null);
   };
 
   return (
@@ -376,7 +393,10 @@ export default function BackgroundUploader({ onModalChange }: BackgroundUploader
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                       {backgrounds.map((bg, index) => (
                         <div key={index} className="relative group border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                          <div className="aspect-video relative">
+                          <div 
+                            className="aspect-video relative cursor-pointer" 
+                            onClick={() => handleOpenPreview(bg)}
+                          >
                             <Image
                               src={bg}
                               alt={`背景图片 ${index + 1}`}
@@ -384,15 +404,22 @@ export default function BackgroundUploader({ onModalChange }: BackgroundUploader
                               className="object-cover"
                               sizes="(max-width: 768px) 100vw, 33vw"
                             />
-                          </div>
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                            <button
-                              onClick={() => handleDeleteBackground(bg)}
-                              disabled={isDeleting}
-                              className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-full"
-                            >
-                              <FaTrash size={16} />
-                            </button>
+                            <div className="absolute top-2 right-2 z-10">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation(); // 阻止事件冒泡，避免触发图片预览
+                                  handleDeleteBackground(bg);
+                                }}
+                                disabled={isDeleting}
+                                className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-md opacity-70 hover:opacity-100 transition-opacity"
+                                aria-label="删除图片"
+                              >
+                                <FaTrash size={14} />
+                              </button>
+                            </div>
+                            <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center">
+                              <FaExpand className="text-white opacity-0 group-hover:opacity-80 transition-opacity" size={24} />
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -413,6 +440,47 @@ export default function BackgroundUploader({ onModalChange }: BackgroundUploader
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* 图片预览弹窗 */}
+      <AnimatePresence>
+        {previewImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000] p-4"
+            style={{ touchAction: 'none' }}
+            onClick={handleClosePreview}
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              className="relative max-w-full max-h-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="relative">
+                <div className="relative w-[90vw] h-[80vh] md:w-[80vw] md:h-[80vh]">
+                  <Image
+                    src={previewImage}
+                    alt="预览图片"
+                    fill
+                    className="object-contain"
+                    sizes="90vw"
+                  />
+                </div>
+                <button
+                  onClick={handleClosePreview}
+                  className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
+                  aria-label="关闭预览"
+                >
+                  <FaTimes size={20} />
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
-} 
+}

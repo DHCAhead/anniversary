@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FaTimes, FaImage, FaUpload, FaTrash } from 'react-icons/fa';
 import Image from 'next/image';
+import { parseExifDate } from '@/lib/exifService';
 
 interface TimelineFormProps {
   onSubmit: (formData: {
@@ -94,13 +95,28 @@ export default function TimelineForm({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     
-    const file = e.target.files[0];
-    const formData = new FormData();
-    formData.append('file', file);
-    
+    setIsUploading(true);
+    setUploadProgress(10);
+
     try {
-      setIsUploading(true);
-      setUploadProgress(10);
+      const files = Array.from(e.target.files);
+      const formData = new FormData();
+      
+      // 尝试从第一张图片中获取拍摄时间
+      try {
+        const firstImage = files[0];
+        const exifDate = await parseExifDate(firstImage);
+        if (exifDate && (!date || date === '')) {
+          setDate(exifDate);
+        }
+      } catch (error) {
+        console.error('读取图片EXIF信息失败:', error);
+      }
+      
+      // 添加多个文件
+      files.forEach(file => {
+        formData.append('files', file);
+      });
       
       const response = await fetch('/api/upload', {
         method: 'POST',
@@ -117,7 +133,8 @@ export default function TimelineForm({
       setUploadProgress(100);
       
       // 添加新上传的图片URL到图片列表
-      setImages(prev => [...prev, data.url]);
+      const newUrls = data.urls || [data.url];
+      setImages(prev => [...prev, ...newUrls]);
       
       // 清空文件输入
       if (fileInputRef.current) {
@@ -149,8 +166,32 @@ export default function TimelineForm({
   };
 
   // 删除图片
-  const handleRemoveImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
+  const handleRemoveImage = async (index: number) => {
+    const imageToDelete = images[index];
+    
+    try {
+      // 检查是否为上传的图片
+      if (imageToDelete.startsWith('/uploads/')) {
+        // 删除服务器上的文件
+        const response = await fetch('/api/upload/delete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ imageUrl: imageToDelete }),
+        });
+        
+        if (!response.ok) {
+          console.error('删除服务器图片失败:', imageToDelete);
+        }
+      }
+      
+      // 从列表中移除图片
+      setImages(prev => prev.filter((_, i) => i !== index));
+    } catch (error) {
+      console.error('删除图片失败:', error);
+      alert('删除图片失败，请重试');
+    }
   };
 
   return (
@@ -254,6 +295,7 @@ export default function TimelineForm({
                   accept="image/*"
                   className="hidden"
                   disabled={isUploading}
+                  multiple
                 />
                 <button
                   type="button"
