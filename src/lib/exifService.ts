@@ -44,7 +44,7 @@ export async function parseExifDate(file: File): Promise<string | null> {
         img.onload = function() {
           try {
             // 读取EXIF数据
-            EXIF.getData(img, function() {
+            EXIF.getData(img, function(this) {
               try {
                 // 尝试获取拍摄时间
                 const exifDate = EXIF.getTag(this, 'DateTimeOriginal') ||
