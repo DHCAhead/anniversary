@@ -5,7 +5,7 @@ import AudioPlayer from 'react-h5-audio-player';
 import type H5AudioPlayer from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
 import { motion } from 'framer-motion';
-import { IoMdMusicalNote } from 'react-icons/io';
+import { IoChevronForward, IoChevronBack } from 'react-icons/io5';
 import Image from 'next/image';
 
 interface MetadataResponse {
@@ -103,10 +103,6 @@ const MusicPlayer = () => {
     }
   }, [currentSong, hasInteracted]);
 
-  const togglePlayer = () => {
-    setIsVisible(!isVisible);
-  };
-
   const handleSongEnd = () => {
     const currentIndex = songs.findIndex(song => song.id === currentSong?.id);
     const nextIndex = (currentIndex + 1) % songs.length;
@@ -114,61 +110,72 @@ const MusicPlayer = () => {
   };
 
   return (
-    <div className="fixed bottom-4 left-4 z-50">
-      <button
-        onClick={togglePlayer}
-        className="bg-primary text-white p-2 rounded-full shadow-lg hover:bg-primary/80 transition-all"
+    <div className="fixed left-0 bottom-8 z-50">
+      <motion.div
+        initial={{ x: -160 }}
+        animate={{ x: isVisible ? 0 : -160 }}
+        transition={{ type: "spring", stiffness: 200, damping: 25 }}
+        className="flex items-end"
       >
-        <IoMdMusicalNote size={24} />
-      </button>
-      
-      <div className={isVisible ? 'block' : 'hidden'}>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
-          className="absolute bottom-16 left-0 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-xl w-80"
-        >
-          {isLoading ? (
-            <div className="text-center py-4">加载中...</div>
-          ) : currentSong ? (
-            <>
-              {currentSong.cover && (
-                <div className="relative w-full aspect-square mb-4 rounded-lg overflow-hidden">
+        {/* 播放器主体 */}
+        <div className="w-[160px] bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-r-lg shadow-lg overflow-hidden">
+          {currentSong ? (
+            <div>
+              {/* 歌曲信息区域 */}
+              <div className="relative h-[160px] group">
+                {currentSong.cover && (
                   <Image
                     src={currentSong.cover}
                     alt={`${currentSong.name} 封面`}
                     fill
                     className="object-cover"
                   />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/60 group-hover:from-black/40 group-hover:to-black/80 transition-all">
+                  <div className="absolute bottom-2 left-2 right-2">
+                    <h3 className="text-xs font-medium text-white truncate">
+                      {currentSong.name}
+                    </h3>
+                    <p className="text-[10px] text-gray-200 truncate mt-0.5">
+                      {currentSong.artist}
+                    </p>
+                  </div>
                 </div>
-              )}
-              <div className="mb-2">
-                <h3 className="text-lg font-semibold">{currentSong.name}</h3>
-                <p className="text-sm text-gray-500">{currentSong.artist}</p>
               </div>
-            </>
-          ) : (
-            <div className="text-center py-4">没有可播放的音乐</div>
-          )}
-        </motion.div>
-      </div>
 
-      {/* 音频播放器始终保持加载状态 */}
-      <div className={`fixed bottom-0 left-0 right-0 ${isVisible ? 'block' : 'hidden'}`}>
-        {currentSong && (
-          <AudioPlayer
-            ref={audioPlayerRef}
-            src={currentSong.url}
-            showSkipControls={true}
-            showJumpControls={false}
-            className="rounded-lg"
-            style={{ backgroundColor: 'transparent' }}
-            onEnded={handleSongEnd}
-            autoPlayAfterSrcChange={true}
-          />
-        )}
-      </div>
+              {/* 播放控件区域 */}
+              <div className="p-1">
+                <AudioPlayer
+                  ref={audioPlayerRef}
+                  src={currentSong.url}
+                  showSkipControls={true}
+                  showJumpControls={false}
+                  className="player-override mini-player"
+                  style={{ backgroundColor: 'transparent', boxShadow: 'none' }}
+                  onEnded={handleSongEnd}
+                  autoPlayAfterSrcChange={true}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="h-[160px] flex items-center justify-center text-gray-500 dark:text-gray-400 text-xs">
+              {isLoading ? "加载中..." : "没有可播放的音乐"}
+            </div>
+          )}
+        </div>
+
+        {/* 展开/收起按钮 - 垂直设计，位置更靠下 */}
+        <button
+          onClick={() => setIsVisible(!isVisible)}
+          className="flex items-center justify-center w-6 h-16 -mb-8 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-l border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors rounded-r-lg shadow-lg -ml-px"
+        >
+          {isVisible ? (
+            <IoChevronBack className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+          ) : (
+            <IoChevronForward className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+          )}
+        </button>
+      </motion.div>
     </div>
   );
 };

@@ -242,3 +242,90 @@ body {
 .animate-custom-pulse {
   animation: custom-pulse 2s infinite;
 }
+
+/* 音乐播放器自定义样式 */
+.player-override.rhap_container {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.player-override .rhap_main {
+  gap: 0.5rem;
+}
+
+.player-override .rhap_progress-section {
+  margin-bottom: 0.25rem;
+}
+
+.player-override .rhap_controls-section {
+  margin-top: 0;
+}
+
+.player-override .rhap_time {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.dark .player-override .rhap_time {
+  color: #999;
+}
+
+.player-override .rhap_progress-bar {
+  height: 3px;
+}
+
+.player-override .rhap_progress-indicator {
+  width: 10px;
+  height: 10px;
+  top: -3.5px;
+  background: #666;
+}
+
+.dark .player-override .rhap_progress-indicator {
+  background: #999;
+}
+
+.player-override .rhap_progress-filled {
+  background-color: #666;
+}
+
+.dark .player-override .rhap_progress-filled {
+  background-color: #999;
+}
+
+.player-override .rhap_button-clear {
+  color: #666;
+}
+
+.dark .player-override .rhap_button-clear {
+  color: #999;
+}
+
+.player-override .rhap_volume-controls {
+  justify-content: center;
+}
+
+.player-override .rhap_volume-button {
+  color: #666;
+  margin-right: 4px;
+}
+
+.dark .player-override .rhap_volume-button {
+  color: #999;
+}
+
+.player-override .rhap_volume-bar {
+  height: 3px;
+}
+
+.player-override .rhap_volume-indicator {
+  width: 10px;
+  height: 10px;
+  top: -3.5px;
+  background: #666;
+}
+
+.dark .player-override .rhap_volume-indicator {
+  background: #999;
+}
