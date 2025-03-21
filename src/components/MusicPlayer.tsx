@@ -115,10 +115,10 @@ const MusicPlayer = () => {
         initial={{ x: -160 }}
         animate={{ x: isVisible ? 0 : -160 }}
         transition={{ type: "spring", stiffness: 200, damping: 25 }}
-        className="flex items-end"
+        className="flex items-stretch relative"
       >
         {/* 播放器主体 */}
-        <div className="w-[160px] bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-r-lg shadow-lg overflow-hidden">
+        <div className="w-[160px] overflow-hidden rounded-r-lg shadow-lg">
           {currentSong ? (
             <div>
               {/* 歌曲信息区域 */}
@@ -131,12 +131,12 @@ const MusicPlayer = () => {
                     className="object-cover"
                   />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/60 group-hover:from-black/40 group-hover:to-black/80 transition-all">
+                <div className="absolute inset-0 bg-gradient-to-b from-black/0 to-black/30 group-hover:from-black/10 group-hover:to-black/50 transition-all">
                   <div className="absolute bottom-2 left-2 right-2">
-                    <h3 className="text-xs font-medium text-white truncate">
+                    <h3 className="text-xs font-medium text-white/90 truncate">
                       {currentSong.name}
                     </h3>
-                    <p className="text-[10px] text-gray-200 truncate mt-0.5">
+                    <p className="text-[10px] text-gray-200/80 truncate mt-0.5">
                       {currentSong.artist}
                     </p>
                   </div>
@@ -144,13 +144,13 @@ const MusicPlayer = () => {
               </div>
 
               {/* 播放控件区域 */}
-              <div className="p-1">
+              <div className="p-1 bg-white/10 dark:bg-gray-800/30 backdrop-blur-md">
                 <AudioPlayer
                   ref={audioPlayerRef}
                   src={currentSong.url}
                   showSkipControls={true}
                   showJumpControls={false}
-                  className="player-override mini-player"
+                  className="player-override mini-player glass-player"
                   style={{ backgroundColor: 'transparent', boxShadow: 'none' }}
                   onEnded={handleSongEnd}
                   autoPlayAfterSrcChange={true}
@@ -158,21 +158,21 @@ const MusicPlayer = () => {
               </div>
             </div>
           ) : (
-            <div className="h-[160px] flex items-center justify-center text-gray-500 dark:text-gray-400 text-xs">
+            <div className="h-[160px] flex items-center justify-center text-gray-500/80 dark:text-gray-400/80 text-xs bg-white/10 dark:bg-gray-800/30 backdrop-blur-md">
               {isLoading ? "加载中..." : "没有可播放的音乐"}
             </div>
           )}
         </div>
 
-        {/* 展开/收起按钮 - 垂直设计，位置更靠下 */}
+        {/* 展开/收起按钮 - 垂直设计，与底部对齐 */}
         <button
           onClick={() => setIsVisible(!isVisible)}
-          className="flex items-center justify-center w-6 h-16 -mb-8 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-l border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors rounded-r-lg shadow-lg -ml-px"
+          className="flex items-center justify-center w-6 h-20 bg-white/10 dark:bg-gray-800/30 backdrop-blur-md border-l border-white/10 dark:border-gray-700/30 hover:bg-white/20 dark:hover:bg-gray-700/40 transition-colors rounded-r-lg shadow-lg -ml-px absolute -right-6 bottom-0"
         >
           {isVisible ? (
-            <IoChevronBack className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+            <IoChevronBack className="w-4 h-4 text-gray-600/90 dark:text-gray-300/90" />
           ) : (
-            <IoChevronForward className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+            <IoChevronForward className="w-4 h-4 text-gray-600/90 dark:text-gray-300/90" />
           )}
         </button>
       </motion.div>
