@@ -3,17 +3,21 @@ import EXIF from 'exif-js';
 // 扩展 EXIF 模块的类型定义
 declare module 'exif-js' {
   interface EXIFStatic {
-    getData(img: HTMLImageElement, callback: (this: HTMLImageElement) => void): void;
-    getTag(img: HTMLImageElement, tag: string): string | undefined;
+    getData(img: HTMLImageElement, callback: (this: HTMLImageElement & {
+      exifdata?: {
+        DateTimeOriginal?: string;
+        DateTime?: string;
+        DateTimeDigitized?: string;
+      }
+    }) => void): void;
+    getTag(img: HTMLImageElement & {
+      exifdata?: {
+        DateTimeOriginal?: string;
+        DateTime?: string;
+        DateTimeDigitized?: string;
+      }
+    }, tag: string): string | undefined;
   }
-}
-
-interface ExifImage extends HTMLImageElement {
-  exifdata?: {
-    DateTimeOriginal?: string;
-    DateTime?: string;
-    DateTimeDigitized?: string;
-  };
 }
 
 /**
