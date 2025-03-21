@@ -1,5 +1,21 @@
 import EXIF from 'exif-js';
 
+// 扩展 EXIF 模块的类型定义
+declare module 'exif-js' {
+  interface EXIFStatic {
+    getData(img: HTMLImageElement, callback: (this: HTMLImageElement) => void): void;
+    getTag(img: HTMLImageElement, tag: string): string | undefined;
+  }
+}
+
+interface ExifImage extends HTMLImageElement {
+  exifdata?: {
+    DateTimeOriginal?: string;
+    DateTime?: string;
+    DateTimeDigitized?: string;
+  };
+}
+
 /**
  * 从图片文件中解析EXIF日期信息
  * @param file 图片文件
@@ -24,7 +40,7 @@ export async function parseExifDate(file: File): Promise<string | null> {
         img.onload = function() {
           try {
             // 读取EXIF数据
-            EXIF.getData(img as any, function() {
+            EXIF.getData(img, function() {
               try {
                 // 尝试获取拍摄时间
                 const exifDate = EXIF.getTag(this, 'DateTimeOriginal') ||
