@@ -237,7 +237,7 @@ export default function Timeline({ onModalChange }: TimelineProps) {
   return (
     <div className="w-full max-w-4xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold text-primary">我们的时间轴</h2>
+        <h2 className="text-3xl font-bold text-primary">我们的珍贵点滴</h2>
         <div className="flex items-center gap-2">
           {saveStatus === 'saving' && (
             <span className="text-sm text-gray-500">保存中...</span>

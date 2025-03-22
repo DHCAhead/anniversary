@@ -41,11 +41,11 @@ export default function Header() {
           transition={{ duration: 0.5 }}
         >
           <h1 className="text-4xl sm:text-6xl font-bold mb-4 text-white">
-            我们的<span className="text-primary">100</span>天
+            DHC和CWX的<span className="text-primary">100</span>天
           </h1>
           
           <p className="text-xl mb-8 max-w-2xl mx-auto text-white/90">
-            记录我们在一起的每一个美好瞬间，珍藏每一份感动与回忆
+            目前的我还什么都没有，能给你的只有时间<br></br>但是我的爱永远不会改变
           </p>
           
           <div className="flex items-center justify-center gap-2 mb-8 text-white">

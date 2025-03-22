@@ -1,4 +1,4 @@
-import { FaHeart } from 'react-icons/fa';
+import { FaHeart, FaStar } from 'react-icons/fa';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -15,7 +15,7 @@ export default function Footer() {
           
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">用</span>
-            <FaHeart className="text-primary text-sm" />
+            <FaStar className="text-primary text-sm" />
             <span className="text-sm text-gray-600 dark:text-gray-400">制作</span>
           </div>
         </div>
