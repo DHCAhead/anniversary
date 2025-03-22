@@ -45,7 +45,7 @@ export default function Header() {
           </h1>
           
           <p className="text-xl mb-8 max-w-2xl mx-auto text-white/90">
-            目前的我还什么都没有，能给你的只有时间<br></br>但是我的爱永远不会改变
+            目前我能给你的只有时间<br></br>但是我的爱永远不会改变
           </p>
           
           <div className="flex items-center justify-center gap-2 mb-8 text-white">
