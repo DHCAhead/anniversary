@@ -81,22 +81,33 @@ export default function TimelineForm({
     return !Object.values(newErrors).some(error => error);
   };
 
-  // 处理图片上传 - 修改为只预览不上传
+  // 处理图片上传 - 修改为选择时就识别日期
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     
     try {
       const files = Array.from(e.target.files);
       
-      // 尝试从第一张图片中获取拍摄时间
-      try {
-        const firstImage = files[0];
-        const exifDate = await parseExifDate(firstImage);
-        if (exifDate && (!date || date === '')) {
-          setDate(exifDate);
+      // 立即尝试从第一张图片中获取拍摄时间
+      if (!date || date.trim() === '') {
+        for (const file of files) {
+          try {
+            const exifDate = await parseExifDate(file);
+            if (exifDate) {
+              setDate(exifDate);
+              // 提示用户已自动填充日期
+              const formattedDate = new Date(exifDate).toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              });
+              alert(`已从图片中读取到拍摄日期：${formattedDate}`);
+              break; // 找到一个有效日期就停止
+            }
+          } catch (error) {
+            console.error('读取图片EXIF信息失败:', error);
+          }
         }
-      } catch (error) {
-        console.error('读取图片EXIF信息失败:', error);
       }
       
       // 存储文件以便稍后上传
@@ -106,7 +117,7 @@ export default function TimelineForm({
       const newPreviewUrls = files.map(file => URL.createObjectURL(file));
       setLocalImagePreviews(prevUrls => [...prevUrls, ...newPreviewUrls]);
       
-      // 清空文件输入
+      // 清空文件输入以允许重复选择相同文件
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -269,27 +280,28 @@ export default function TimelineForm({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4 overflow-hidden"
-      style={{ touchAction: 'none' }}
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4"
     >
       <div 
         ref={formRef}
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-primary">
-            {isEdit ? '编辑回忆' : '添加回忆'}
-          </h2>
-          <button
-            onClick={handleCancel}
-            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-            aria-label="关闭"
-          >
-            <FaTimes size={20} />
-          </button>
-        </div>
-        
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-primary">
+              {isEdit ? '编辑回忆' : '添加回忆'}
+            </h2>
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              aria-label="关闭"
+            >
+              <FaTimes size={20} />
+            </button>
+          </div>
+          
           <div className="mb-4">
             <label className="block text-gray-700 dark:text-gray-300 mb-2">
               日期
@@ -356,8 +368,8 @@ export default function TimelineForm({
             </label>
             
             <div className="flex flex-col gap-4">
-              {/* 上传图片 */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              {/* 上传图片按钮和URL输入框 */}
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -370,17 +382,16 @@ export default function TimelineForm({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className={`flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/80 text-white rounded-md transition-colors ${
+                  className={`flex items-center justify-center gap-2 px-4 py-2 bg-primary hover:bg-primary/80 text-white rounded-md transition-colors ${
                     isUploading ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                   disabled={isUploading}
                 >
                   <FaUpload size={16} />
-                  选择图片
+                  <span>选择图片</span>
                 </button>
                 
-                {/* 或者添加图片URL */}
-                <div className="flex-1 flex gap-2 w-full mt-2 sm:mt-0">
+                <div className="flex-1 flex gap-2">
                   <input
                     type="text"
                     value={imageUrl}
@@ -391,19 +402,19 @@ export default function TimelineForm({
                   <button
                     type="button"
                     onClick={handleAddImageUrl}
-                    className="px-4 py-2 bg-primary hover:bg-primary/80 text-white rounded-md transition-colors"
+                    className="flex items-center justify-center px-4 py-2 bg-primary hover:bg-primary/80 text-white rounded-md transition-colors"
                   >
                     <FaImage size={16} />
                   </button>
                 </div>
               </div>
               
-              {/* 上传进度 */}
+              {/* 上传进度条 */}
               {isUploading && (
                 <div className="w-full">
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                     <div
-                      className="bg-primary h-2.5 rounded-full"
+                      className="bg-primary h-2.5 rounded-full transition-all duration-300"
                       style={{ width: `${uploadProgress}%` }}
                     ></div>
                   </div>
@@ -412,16 +423,16 @@ export default function TimelineForm({
                   </p>
                 </div>
               )}
-              
+
               {/* 本地预览图片 */}
               {localImagePreviews.length > 0 && (
-                <div>
+                <div className="mt-4">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                     待上传图片 ({localImagePreviews.length}张):
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {localImagePreviews.map((previewUrl, index) => (
-                      <div key={`local-${index}`} className="relative group">
+                      <div key={`local-${index}`} className="relative group touch-manipulation">
                         <div className="aspect-square relative rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
                           <Image
                             src={previewUrl}
@@ -434,7 +445,7 @@ export default function TimelineForm({
                         <button
                           type="button"
                           onClick={() => handleRemoveLocalImage(index)}
-                          className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                          className="absolute top-1 right-1 bg-red-500 text-white p-2 rounded-full opacity-70 hover:opacity-100 transition-opacity"
                           aria-label="删除图片"
                         >
                           <FaTrash size={12} />
@@ -447,13 +458,13 @@ export default function TimelineForm({
               
               {/* 已添加的图片URL */}
               {images.length > 0 && (
-                <div>
+                <div className="mt-4">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                     已添加图片 ({images.length}张):
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {images.map((image, index) => (
-                      <div key={`remote-${index}`} className="relative group">
+                      <div key={`remote-${index}`} className="relative group touch-manipulation">
                         <div className="aspect-square relative rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
                           <Image
                             src={image}
@@ -466,7 +477,7 @@ export default function TimelineForm({
                         <button
                           type="button"
                           onClick={() => handleRemoveImage(index)}
-                          className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                          className="absolute top-1 right-1 bg-red-500 text-white p-2 rounded-full opacity-70 hover:opacity-100 transition-opacity"
                           aria-label="删除图片"
                         >
                           <FaTrash size={12} />

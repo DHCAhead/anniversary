@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import TimelineItem from './TimelineItem';
 import TimelineForm from './TimelineForm';
 import PasswordModal from './PasswordModal';
-import { FaPlus } from 'react-icons/fa';
+import { FaPlus, FaSortAmountDown, FaSortAmountUp } from 'react-icons/fa';
 import { getTimelineEvents, saveTimelineEvents } from '@/lib/timelineService';
 import { TimelineEvent } from '@/app/api/timeline/route';
 import { setPasswordToken } from '@/lib/passwordService';
@@ -19,6 +19,7 @@ interface TimelineProps {
 
 export default function Timeline({ onModalChange }: TimelineProps) {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
+  const [isAscending, setIsAscending] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [currentAction, setCurrentAction] = useState<'add' | 'edit' | 'delete'>('add');
@@ -35,26 +36,39 @@ export default function Timeline({ onModalChange }: TimelineProps) {
     }
   }, [isFormOpen, isPasswordModalOpen, isDeleteConfirmOpen, onModalChange]);
 
-  // 从服务器加载数据
+  // 获取时间轴事件
   useEffect(() => {
-    async function loadEvents() {
+    async function fetchEvents() {
+      setIsLoading(true);
       try {
-        setIsLoading(true);
-        const loadedEvents = await getTimelineEvents();
-        // 按日期排序（从新到旧）
-        const sortedEvents = [...loadedEvents].sort((a, b) => {
-          return new Date(b.date).getTime() - new Date(a.date).getTime();
-        });
+        const data = await getTimelineEvents();
+        // 根据排序状态对事件进行排序
+        const sortedEvents = sortEvents(data);
         setEvents(sortedEvents);
       } catch (error) {
-        console.error('加载事件失败:', error);
+        console.error('获取事件失败:', error);
       } finally {
         setIsLoading(false);
       }
     }
-
-    loadEvents();
+    
+    fetchEvents();
   }, []);
+
+  // 添加排序函数
+  const sortEvents = (eventsToSort: TimelineEvent[]) => {
+    return [...eventsToSort].sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      return isAscending ? dateA - dateB : dateB - dateA;
+    });
+  };
+
+  // 处理排序切换
+  const handleSortToggle = () => {
+    setIsAscending(!isAscending);
+    setEvents(sortEvents(events));
+  };
 
   // 保存数据到服务器
   const saveEvents = async (updatedEvents: TimelineEvent[]) => {
@@ -237,7 +251,7 @@ export default function Timeline({ onModalChange }: TimelineProps) {
   return (
     <div className="w-full max-w-4xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold text-primary">我们的珍贵点滴</h2>
+        <h3 className="text-2xl md:text-3xl font-bold text-primary">我们的珍贵点滴</h3>
         <div className="flex items-center gap-2">
           {saveStatus === 'saving' && (
             <span className="text-sm text-gray-500">保存中...</span>
@@ -248,6 +262,13 @@ export default function Timeline({ onModalChange }: TimelineProps) {
           {saveStatus === 'error' && (
             <span className="text-sm text-red-500">保存失败</span>
           )}
+          <button
+            onClick={handleSortToggle}
+            className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-full transition-colors"
+            title={isAscending ? "当前为时间正序" : "当前为时间倒序"}
+          >
+            {isAscending ? <FaSortAmountUp /> : <FaSortAmountDown />}
+          </button>
           <button
             onClick={handleAddClick}
             className="flex items-center gap-2 bg-primary hover:bg-primary/80 text-white px-4 py-2 rounded-full transition-colors"

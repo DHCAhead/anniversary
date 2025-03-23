@@ -170,7 +170,7 @@ export default function Envelope({ onModalChange }: EnvelopeProps) {
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="bg-[#fff8e1] rounded-lg shadow-xl w-full max-w-2xl p-8 max-h-[80vh] overflow-y-auto relative"
+              className="bg-[#fff8e1] rounded-lg shadow-xl w-full max-w-2xl p-8 max-h-[90vh] overflow-y-auto relative"
               style={{ 
                 backgroundImage: 'linear-gradient(#fff8e1 1px, transparent 1px), linear-gradient(90deg, #fff8e1 1px, transparent 1px)',
                 backgroundSize: '20px 20px',
@@ -220,30 +220,29 @@ export default function Envelope({ onModalChange }: EnvelopeProps) {
                 </div>
               </div>
 
-              <div className="prose prose-sm sm:prose max-w-none text-black font-serif overflow-y-auto">
-                {isLoading ? (
-                  <div className="flex justify-center items-center h-40">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  </div>
-                ) : isEditing ? (
-                  <textarea
-                    value={editContent}
-                    onChange={(e) => setEditContent(e.target.value)}
-                    className="w-full h-[60vh] p-4 border border-gray-300 rounded-md font-mono text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary overflow-y-auto"
-                    placeholder="在这里编辑信件内容，支持Markdown格式..."
-                  />
-                ) : (
-                  <div className="prose prose-sm sm:prose max-w-none text-black font-serif overflow-y-auto">
-                    <ReactMarkdown 
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        p: ({node, ...props}) => <p style={{color: 'black', whiteSpace: 'pre-wrap'}} {...props}/>,
-                        li: ({node, ...props}) => <li style={{color: 'black'}} {...props}/>,
-                        ol: ({node, ...props}) => <ol style={{color: 'black'}} {...props}/>,
-                        ul: ({node, ...props}) => <ul style={{color: 'black'}} {...props}/>
-                      }}
-                    >
-                      {letterContent || `# 亲爱的
+              {isLoading ? (
+                <div className="flex justify-center items-center h-40">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : isEditing ? (
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="w-full h-[70vh] p-4 border border-gray-300 rounded-md font-mono text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary overflow-y-auto custom-scrollbar"
+                  placeholder="在这里编辑信件内容，支持Markdown格式..."
+                />
+              ) : (
+                <div className="prose prose-sm sm:prose max-w-none text-black font-serif overflow-y-auto custom-scrollbar" style={{ maxHeight: 'calc(80vh - 6rem)' }}>
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      p: ({node, ...props}) => <p style={{color: 'black', whiteSpace: 'pre-wrap'}} {...props}/>,
+                      li: ({node, ...props}) => <li style={{color: 'black'}} {...props}/>,
+                      ol: ({node, ...props}) => <ol style={{color: 'black'}} {...props}/>,
+                      ul: ({node, ...props}) => <ul style={{color: 'black'}} {...props}/>
+                    }}
+                  >
+                    {letterContent || `# 亲爱的
 
 这是我写给你的一封信，希望你能喜欢。
 
@@ -256,10 +255,9 @@ export default function Envelope({ onModalChange }: EnvelopeProps) {
 > 爱是一种选择，而我选择了你。
 
 祝你每天都开心！`}
-                    </ReactMarkdown>
-                  </div>
-                )}
-              </div>
+                  </ReactMarkdown>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
