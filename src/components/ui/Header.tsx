@@ -41,7 +41,7 @@ export default function Header() {
           transition={{ duration: 0.5 }}
         >
           <h1 className="text-4xl sm:text-6xl font-bold mb-4 text-white">
-            DHC和CWX的<span className="text-primary">100</span>天
+            和CWX的<span className="text-primary">100</span>天
           </h1>
           
           <p className="text-xl mb-8 max-w-2xl mx-auto text-white/90">
