@@ -42,8 +42,12 @@ export default function Timeline({ onModalChange }: TimelineProps) {
       setIsLoading(true);
       try {
         const data = await getTimelineEvents();
-        // 根据排序状态对事件进行排序
-        const sortedEvents = sortEvents(data);
+        // 根据当前的排序状态对事件进行排序
+        const sortedEvents = [...data].sort((a, b) => {
+          const dateA = new Date(a.date).getTime();
+          const dateB = new Date(b.date).getTime();
+          return isAscending ? dateA - dateB : dateB - dateA;
+        });
         setEvents(sortedEvents);
       } catch (error) {
         console.error('获取事件失败:', error);
@@ -53,21 +57,11 @@ export default function Timeline({ onModalChange }: TimelineProps) {
     }
     
     fetchEvents();
-  }, []);
-
-  // 添加排序函数
-  const sortEvents = (eventsToSort: TimelineEvent[]) => {
-    return [...eventsToSort].sort((a, b) => {
-      const dateA = new Date(a.date).getTime();
-      const dateB = new Date(b.date).getTime();
-      return isAscending ? dateA - dateB : dateB - dateA;
-    });
-  };
+  }, [isAscending]);
 
   // 处理排序切换
   const handleSortToggle = () => {
     setIsAscending(!isAscending);
-    setEvents(sortEvents(events));
   };
 
   // 保存数据到服务器
