@@ -9,7 +9,7 @@ export default function Footer() {
         <div className="flex flex-col sm:flex-row justify-between items-center">
           <div className="mb-4 sm:mb-0">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              © {currentYear} 我们的100天纪念日
+              © {currentYear} DHC和CWX的100天纪念日
             </p>
           </div>
           
